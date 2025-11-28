@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+
+# Venv
+.venv/
+venv/
+
+# Vim
+*.swp
+*.swo
+*.swn
+*.un~
+*~
