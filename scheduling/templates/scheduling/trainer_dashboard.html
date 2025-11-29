@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2 class="mb-4 text-info">🧑‍🏫 Trainer Panel</h2>
+    <p class="lead">Welcome back, Trainer **{{ user.first_name|default:user.username }}**! Manage your schedule and client bookings.</p>
+    
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">My Schedule</div>
+                <div class="card-body">
+                    <p>You have 2 classes scheduled this week.</p>
+                    <a href="#" class="btn btn-sm btn-outline-success">View Full Schedule</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">Pending Requests</div>
+                <div class="card-body">
+                    <p>You have 5 pending private booking requests.</p>
+                    <a href="#" class="btn btn-sm btn-outline-primary">Review Requests</a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

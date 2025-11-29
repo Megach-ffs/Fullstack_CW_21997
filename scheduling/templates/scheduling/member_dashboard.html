@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2 class="mb-4 text-warning">⭐ Member Dashboard</h2>
+    <p class="lead">Welcome, **{{ user.first_name|default:user.username }}**! Here you can manage your bookings and profile.</p>
+    
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">Upcoming Classes</div>
+                <div class="card-body">
+                    <p>You have 3 upcoming class appointments.</p>
+                    <a href="#" class="btn btn-sm btn-outline-warning">View Appointments</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">Private Bookings</div>
+                <div class="card-body">
+                    <p>You have 1 pending private booking with a trainer.</p>
+                    <a href="#" class="btn btn-sm btn-outline-info">Manage Bookings</a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

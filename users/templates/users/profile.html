@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2 class="mb-4 text-secondary">👤 User Profile</h2>
+    <p class="lead">View and update your personal information.</p>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <h5 class="card-title">Basic Information</h5>
+                <ul class="list-group list-group-flush mb-4">
+                    <li class="list-group-item"><strong>Username:</strong> {{ user.username }}</li>
+                    <li class="list-group-item"><strong>Email:</strong> {{ user.email }}</li>
+                    <li class="list-group-item"><strong>Full Name:</strong> {{ user.first_name }} {{ user.last_name }}</li>
+                    <li class="list-group-item"><strong>Role:</strong> <span class="badge bg-primary">{{ user.role|upper }}</span></li>
+                </ul>
+                <a href="#" class="btn btn-primary">Edit Profile</a>
+                <a href="#" class="btn btn-secondary">Change Password</a>
+            </form>
+        </div>
+    </div>
+{% endblock content %}

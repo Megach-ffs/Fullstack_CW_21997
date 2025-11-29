@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="p-5 mb-4 bg-light rounded-3 text-center">
+        <div class="container-fluid py-5">
+            <h1 class="display-3 fw-bold text-success">Welcome to Hello<span class="text-dark">Fit</span></h1>
+            <p class="col-md-8 fs-4 mx-auto">Your ultimate platform for scheduling and managing fitness classes and personal training sessions.</p>
+            
+            {% if user.is_authenticated %}
+                <p class="lead">Check out the latest classes or manage your profile!</p>
+                <a href="{% url 'classes' %}" class="btn btn-primary btn-lg me-2">View Classes</a>
+                {% if user.role == 'member' %}
+                    <a href="{% url 'member_dashboard' %}" class="btn btn-warning btn-lg">Go to Dashboard</a>
+                {% elif user.role == 'trainer' %}
+                    <a href="{% url 'trainer_dashboard' %}" class="btn btn-info btn-lg">Trainer Panel</a>
+                {% endif %}
+            {% else %}
+                <p class="lead">Join our community today to start booking your fitness journey!</p>
+                <a href="{% url 'register_member' %}" class="btn btn-success btn-lg me-2">Join Now</a>
+                <a href="{% url 'login' %}" class="btn btn-outline-dark btn-lg">Log In</a>
+            {% endif %}
+        </div>
+    </div>
+{% endblock content %}

@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2 class="mb-4 text-primary">💪 All Available Classes</h2>
+    <p class="lead">Browse the current schedule of group classes. Click on a class to view details and book your spot.</p>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Yoga Flow</h5>
+                    <p class="card-text"><small class="text-muted">Monday, 9:00 AM | Room 101 | Trainer: Alice</small></p>
+                    <p class="card-text">A relaxing start to the week with gentle stretching.</p>
+                    <a href="#" class="btn btn-sm btn-outline-success">View & Book</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">HIIT Blast</h5>
+                    <p class="card-text"><small class="text-muted">Tuesday, 5:30 PM | Room 205 | Trainer: Bob</small></p>
+                    <p class="card-text">High-intensity interval training for maximum calorie burn.</p>
+                    <a href="#" class="btn btn-sm btn-outline-success">View & Book</a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
