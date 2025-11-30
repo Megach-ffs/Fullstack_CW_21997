@@ -1,27 +1,113 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
+<div class="container py-4">
     <h2 class="mb-4 text-warning">⭐ Member Dashboard</h2>
-    <p class="lead">Welcome, **{{ user.first_name|default:user.username }}**! Here you can manage your bookings and profile.</p>
+    <p class="lead">Welcome, <strong>{{ user.first_name|default:user.username }}</strong>! Here you can view your scheduled classes and manage private bookings.</p>
     
     <div class="row">
+        <!-- LEFT COLUMN: Upcoming Group Classes (Now a schedule of sessions) -->
         <div class="col-md-6 mb-4">
-            <div class="card border-warning">
-                <div class="card-header bg-warning text-dark">Upcoming Classes</div>
-                <div class="card-body">
-                    <p>You have 3 upcoming class appointments.</p>
-                    <a href="#" class="btn btn-sm btn-outline-warning">View Appointments</a>
+            <div class="card border-warning h-100">
+                <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">My Upcoming Class Sessions (Total: {{ my_classes|length }})</h5>
+                    <a href="{% url 'classes' %}" class="btn btn-sm btn-dark">Browse New Classes</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if my_classes %}
+                        <div class="list-group list-group-flush">
+                            {# my_classes now contains Schedule objects directly, as fetched in views.py #}
+                            {% for schedule in my_classes %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1 text-primary">{{ schedule.group.name }}</h6>
+                                        <p class="mb-1 small">
+                                            <span class="badge bg-secondary me-2">{{ schedule.start_time|date:"l, M d" }}</span>
+                                            <span class="badge bg-dark me-2">{{ schedule.start_time|time:"g:i A" }} - {{ schedule.end_time|time:"g:i A" }}</span>
+                                            <span class="badge bg-info text-dark">Room: {{ schedule.room }}</span>
+                                        </p>
+                                        <small class="text-muted">Trainer: {{ schedule.trainer.user.first_name }} {{ schedule.trainer.user.last_name }}</small>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="p-3 text-center">
+                            <p class="mb-0 text-muted">You are not currently enrolled in any active group classes. <a href="{% url 'classes' %}">Sign up here</a>.</p>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
+        
+        <!-- RIGHT COLUMN: Private Bookings and New Booking Form -->
         <div class="col-md-6 mb-4">
-            <div class="card border-info">
-                <div class="card-header bg-info text-white">Private Bookings</div>
+            <div class="card border-info mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">My Private Bookings</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if my_bookings %}
+                        <div class="list-group list-group-flush">
+                            {% for booking in my_bookings %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">Private Session with {{ booking.trainer.user.first_name }}</h6>
+                                        <small class="text-muted">{{ booking.start_time|date:"l, M d, g:i A" }}</small>
+                                    </div>
+                                    <span class="badge 
+                                        {% if booking.status == 'active' %}bg-success
+                                        {% elif booking.status == 'pending' %}bg-warning text-dark
+                                        {% else %}bg-danger
+                                        {% endif %}">
+                                        {{ booking.get_status_display }}
+                                    </span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="p-3 text-muted mb-0 text-center">No private bookings found.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Booking Form -->
+            <div class="card border-primary">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Book a Private Trainer</h5>
+                </div>
                 <div class="card-body">
-                    <p>You have 1 pending private booking with a trainer.</p>
-                    <a href="#" class="btn btn-sm btn-outline-info">Manage Bookings</a>
+                    <form method="post">
+                        {% csrf_token %}
+                        {% if booking_form.non_field_errors %}
+                            <div class="alert alert-danger">{{ booking_form.non_field_errors }}</div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Select Trainer</label>
+                            {{ booking_form.trainer }} 
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label">Date</label>
+                                {{ booking_form.date }}
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label">Time</label>
+                                {{ booking_form.time }}
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-info text-white w-100">Request Booking</button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
+</div>
 {% endblock content %}
+
+
+

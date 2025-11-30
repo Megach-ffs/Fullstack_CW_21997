@@ -46,7 +46,7 @@
                                 </li>
                             {% elif user.role == 'staff' %}
                                 <li class="nav-item">
-                                    <a class="nav-link text-danger" href="{% url 'admin:index' %}">Staff Admin</a>
+                                    <a class="nav-link text-danger" href="{% url 'staff_dashboard' %}">Staff Admin</a>
                                 </li>
                             {% endif %}
                         {% endif %}

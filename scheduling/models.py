@@ -24,6 +24,8 @@ class Schedule(models.Model):
     end_time = models.DateTimeField()
     room = models.IntegerField()
     status = models.CharField(max_length=25, choices=STATUS, default='inactive')
+    recurrence_days = models.CharField(max_length=50, blank=True, null=True, help_text="0=Monday, 6=Sunday") 
+    repeat_until = models.DateField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.group.name} - {self.start_time} - {self.trainer.user.first_name}"
@@ -57,7 +59,7 @@ class GroupRecord(models.Model):
         ]
 
     member = models.ForeignKey('users.Member', on_delete=models.CASCADE)
-    schedule = models.ForeignKey(Schedule, on_delete=models.CASCADE)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS, default='inactive')
 

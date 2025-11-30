@@ -1,29 +1,67 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
     <h2 class="mb-4 text-primary">💪 All Available Classes</h2>
-    <p class="lead">Browse the current schedule of group classes. Click on a class to view details and book your spot.</p>
+    <p class="lead">Browse the available long-term classes. Signing up registers you for all future sessions of that class until the end date.</p>
 
-    <div class="row">
-        <div class="col-md-4 mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Yoga Flow</h5>
-                    <p class="card-text"><small class="text-muted">Monday, 9:00 AM | Room 101 | Trainer: Alice</small></p>
-                    <p class="card-text">A relaxing start to the week with gentle stretching.</p>
-                    <a href="#" class="btn btn-sm btn-outline-success">View & Book</a>
+    {% if not active_groups %}
+        <div class="alert alert-info">No active, recurring classes available for enrollment at the moment.</div>
+    {% else %}
+        <div class="row">
+            {# active_groups now contains Group objects, not Schedule objects #}
+            {% for group in active_groups %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow-sm border-primary">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title text-success">{{ group.name }}</h5>
+                            <p class="card-text small text-muted">Class Duration: {{ group.duration }} minutes</p>
+                            
+                            <p class="card-text mt-2 flex-grow-1">
+                                {{ group.description|default:"A comprehensive fitness course." }}
+                            </p>
+                            
+                            <ul class="list-group list-group-flush small mb-3">
+                                <li class="list-group-item">
+                                    <strong>Upcoming Sessions:</strong> {{ group.upcoming_sessions }}
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Max Capacity:</strong> {{ group.capacity }} Members
+                                </li>
+                                <li class="list-group-item">
+                                    {# Using annotated field 'current_enrollment' for efficiency #}
+                                    <strong>Current Enrollment:</strong> {{ group.current_enrollment }} / {{ group.capacity }}
+                                </li>
+                            </ul>
+                            
+                            <div class="d-flex justify-content-between align-items-center mt-auto">
+                                
+
+                                {% if user.is_authenticated and user.role == 'member' %}
+                                    {# Check for capacity and enrollment using the annotated fields for cleaner template logic #}
+                                    <form method="post" action="{% url 'classes' %}" class="w-100">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="group_id" value="{{ group.id }}">
+                                        
+                                        {% if group.current_enrollment >= group.capacity %}
+                                            <button type="button" class="btn btn-sm btn-secondary w-100" disabled>Class Full</button>
+                                        
+                                        {# Using annotated field 'is_enrolled' #}
+                                        {% elif group.is_enrolled %}
+                                            <button type="button" class="btn btn-sm btn-success w-100" disabled>Enrolled</button>
+                                        {% else %}
+                                            <button type="submit" class="btn btn-sm btn-outline-success w-100">Sign Up for Class</button>
+                                        {% endif %}
+
+                                    </form>
+                                {% else %}
+                                    <span class="text-muted small">Login as a member to sign up.</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            {% endfor %}
         </div>
-        <div class="col-md-4 mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">HIIT Blast</h5>
-                    <p class="card-text"><small class="text-muted">Tuesday, 5:30 PM | Room 205 | Trainer: Bob</small></p>
-                    <p class="card-text">High-intensity interval training for maximum calorie burn.</p>
-                    <a href="#" class="btn btn-sm btn-outline-success">View & Book</a>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% endif %}
 {% endblock content %}

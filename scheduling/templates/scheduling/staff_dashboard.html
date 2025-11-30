@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4 text-danger">🛡️ Staff Admin Panel</h2>
+    
+    <div class="row">
+        <!-- Schedule Creation Card -->
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Create New Class Schedule</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Group Class</label>
+                                {{ form.group }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Trainer</label>
+                                {{ form.trainer }}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Date (Start)</label>
+                                {{ form.start_date }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Start Time</label>
+                                {{ form.time_start }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">End Time</label>
+                                {{ form.time_end }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3 p-3 bg-light rounded border">
+                            <label class="form-label fw-bold">Recurrence (Optional)</label>
+                            <div class="d-flex gap-3 flex-wrap">
+                                {{ form.recurrence_days }}
+                            </div>
+                            <div class="mt-2">
+                                <label class="form-label">Repeat Until:</label>
+                                {{ form.repeat_until }}
+                            </div>
+                            <small class="text-muted">Select days of the week to automatically generate sessions until the end date.</small>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Room Number</label>
+                                {{ form.room }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Status</label>
+                                {{ form.status }}
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-danger w-100">Generate Schedule</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Side Info -->
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Quick Links</h5>
+                    <div class="list-group">
+                        <a href="#" class="list-group-item list-group-item-action">Manage Trainers</a>
+                        <a href="#" class="list-group-item list-group-item-action">Manage Members</a>
+                        <a href="{% url 'classes' %}" class="list-group-item list-group-item-action">View Live Schedule</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
