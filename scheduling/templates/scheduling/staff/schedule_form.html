@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">{{ title }}</h3>
+                </div>
+                <div class="card-body">
+                    <p><strong>Group:</strong> {{ schedule.group.name }}</p>
+                    <p><strong>Time:</strong> {{ schedule.start_time|date:"D, d M Y H:i" }}</p>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Room</label>
+                            <input type="number" name="room" class="form-control" value="{{ schedule.room }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Status</label>
+                            <select name="status" class="form-select">
+                                <option value="active" {% if schedule.status=='active' %}selected{% endif %}>Active
+                                </option>
+                                <option value="in_progress" {% if schedule.status=='in_progress' %}selected{% endif %}>
+                                    In Progress</option>
+                                <option value="inactive" {% if schedule.status=='inactive' %}selected{% endif %}>
+                                    Inactive</option>
+                            </select>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-success">Save</button>
+                            <a href="{% url 'staff_schedule_list' %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

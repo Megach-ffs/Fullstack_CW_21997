@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from datetime import timedelta, datetime, time
-from django.db.models import Count, Exists, OuterRef, Subquery, BooleanField, Value
+from django.db.models import Count, Exists, OuterRef, Subquery, BooleanField, Value, Q
 from .models import *
 from .forms import *
 from users.models import *
@@ -126,42 +126,40 @@ def staff_dashboard(request):
 @login_required
 def classes(request):
     
-    # Define a subquery to count the number of *active* members for each group
-    # This count is independent of the Schedule join, solving the over-counting issue.
     enrollment_count_subquery = GroupRecord.objects.filter(
         group=OuterRef('pk'), 
-        status='active'
+        # status='active'
     ).values('group').annotate(
         count=Count('pk')
     ).values('count')
     
-    # 1. Start with the base queryset for active groups
     groups_queryset = Group.objects.filter(
-        schedule__status='active', 
+        # schedule__status='active', 
         schedule__start_time__gte=timezone.now()
     ).distinct()
 
-    # 2. Add annotation for current enrollment count using the subquery
+    
+    query = request.GET.get('q')
+    if query:
+        groups_queryset = groups_queryset.filter(name__icontains=query)
+
     groups_queryset = groups_queryset.annotate(
         current_enrollment=Subquery(enrollment_count_subquery)
     ).order_by('name')
     
-    # 3. Add annotation for user enrollment status (only for members)
     if request.user.is_authenticated and request.user.role == 'member':
         member = request.user.member
         
-        # Check if an active GroupRecord exists for the current member and group (OuterRef('pk') links back to the current Group)
         is_enrolled_subquery = GroupRecord.objects.filter(
             group=OuterRef('pk'), 
             member=member, 
-            status='active'
+            # status='active'
         )
         
         groups_queryset = groups_queryset.annotate(
             is_enrolled=Exists(is_enrolled_subquery)
         )
     else:
-        # If not a member/logged in, default is_enrolled to False
         groups_queryset = groups_queryset.annotate(is_enrolled=Value(False, output_field=BooleanField()))
 
     active_groups = groups_queryset
@@ -170,25 +168,288 @@ def classes(request):
     if request.method == 'POST' and request.user.role =='member':
         
         group_id = request.POST.get('group_id')
-        group = get_object_or_404(Group, id=group_id) # FIX: Look up Group, not Schedule
+        group = get_object_or_404(Group, id=group_id) 
         member = request.user.member
         
-        # Check 1: Already enrolled
         if GroupRecord.objects.filter(member=member, group=group, status='active').exists():
             messages.warning(request, f'You are already enrolled in {group.name}.')
             return redirect('classes')
-
-        # Check 2: Class Full (Recalculate enrollment for safety)
         current_enrollment = GroupRecord.objects.filter(group=group, status='active').count()
         if current_enrollment >= group.capacity:
             messages.error(request, f'The class "{group.name}" is full.')
             return redirect('classes')
 
-        # Enrollment successful
-        # Status is set to 'active' immediately upon signup, as per standard recurring class enrollment logic
         GroupRecord.objects.create(member=member, group=group, status='active') 
         messages.success(request, f'You have successfully signed up for {group.name}.')
         return redirect('classes')
 
 
     return render(request, 'scheduling/classes.html', {'active_groups':active_groups})
+
+@login_required
+def update_booking(request, booking_id):
+    if request.user.role != 'trainer':
+        messages.error(request, "Access denied")
+        return redirect('home')
+    
+    booking = get_object_or_404(Booking, id=booking_id, trainer=request.user.trainer)
+    
+    if request.method == 'POST':
+        form = BookingTimeUpdateForm(request.POST)
+        if form.is_valid():
+            date = form.cleaned_data['date']
+            time_obj = form.cleaned_data['time']
+            start_date = timezone.make_aware(datetime.combine(date, time_obj))
+            end_date = start_date + timedelta(hours=1)
+            
+            if Booking.objects.filter(trainer=booking.trainer, start_time=start_date, status='active').exclude(id=booking.id).exists():
+                 messages.error(request, 'You are already booked for this time')
+            else:
+                booking.start_time = start_date
+                booking.end_time = end_date
+                booking.save()
+                messages.success(request, "Booking time updated successfully")
+                return redirect('trainer_dashboard')
+    else:
+        initial_data = {
+            'date': booking.start_time.date(),
+            'time': booking.start_time.time()
+        }
+        form = BookingTimeUpdateForm(initial=initial_data)
+    
+    return render(request, 'scheduling/update_booking.html', {'form': form, 'booking': booking})
+
+
+
+@login_required
+def staff_trainer_list(request):
+    if request.user.role != 'staff': return redirect('home')
+    trainers = Trainer.objects.all()
+    
+    query = request.GET.get('q')
+    if query:
+        trainers = trainers.filter(
+            Q(user__first_name__icontains=query) | 
+            Q(user__last_name__icontains=query) |
+            Q(user__email__icontains=query) |
+            Q(specialization__icontains=query)
+        )
+        
+    return render(request, 'scheduling/staff/trainer_list.html', {'trainers': trainers})
+
+@login_required
+def staff_trainer_create(request):
+    if request.user.role != 'staff': return redirect('home')
+    if request.method == 'POST':
+        form = TrainerForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Trainer created successfully")
+            return redirect('staff_trainer_list')
+    else:
+        form = TrainerForm()
+    return render(request, 'scheduling/staff/trainer_form.html', {'form': form, 'title': 'Create Trainer'})
+
+@login_required
+def staff_trainer_update(request, pk):
+    if request.user.role != 'staff': return redirect('home')
+    trainer = get_object_or_404(Trainer, pk=pk)
+    if request.method == 'POST':
+        trainer.specialization = request.POST.get('specialization')
+        trainer.bio = request.POST.get('bio')
+        trainer.user.first_name = request.POST.get('first_name')
+        trainer.user.last_name = request.POST.get('last_name')
+        trainer.user.email = request.POST.get('email')
+        trainer.user.save()
+        trainer.save()
+        messages.success(request, "Trainer updated")
+        return redirect('staff_trainer_list')
+
+    return render(request, 'scheduling/staff/trainer_form.html', {'trainer': trainer, 'title': 'Update Trainer'})
+
+@login_required
+def staff_member_list(request):
+    if request.user.role != 'staff': return redirect('home')
+    members = Member.objects.all()
+    
+    query = request.GET.get('q')
+    if query:
+        members = members.filter(
+            Q(user__first_name__icontains=query) | 
+            Q(user__last_name__icontains=query) |
+            Q(user__email__icontains=query)
+        )
+        
+    return render(request, 'scheduling/staff/member_list.html', {'members': members})
+
+@login_required
+def staff_member_create(request):
+    if request.user.role != 'staff': return redirect('home')
+    if request.method == 'POST':
+        form = MemberForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Member created successfully")
+            return redirect('staff_member_list')
+    else:
+        form = MemberForm()
+    return render(request, 'scheduling/staff/member_form.html', {'form': form, 'title': 'Create Member'})
+
+@login_required
+def staff_member_update(request, pk):
+    if request.user.role != 'staff': return redirect('home')
+    member = get_object_or_404(Member, pk=pk)
+    if request.method == 'POST':
+        member.user.first_name = request.POST.get('first_name')
+        member.user.last_name = request.POST.get('last_name')
+        member.user.email = request.POST.get('email')
+        member.user.save()
+        messages.success(request, "Member updated")
+        return redirect('staff_member_list')
+    return render(request, 'scheduling/staff/member_form.html', {'member': member, 'title': 'Update Member'})
+
+@login_required
+def staff_group_list(request):
+    if request.user.role != 'staff': return redirect('home')
+    groups = Group.objects.all()
+    
+    query = request.GET.get('q')
+    if query:
+        groups = groups.filter(name__icontains=query)
+        
+    return render(request, 'scheduling/staff/group_list.html', {'groups': groups})
+
+@login_required
+def staff_group_create(request):
+    if request.user.role != 'staff': return redirect('home')
+    if request.method == 'POST':
+        form = GroupForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Group created")
+            return redirect('staff_group_list')
+    else:
+        form = GroupForm()
+    return render(request, 'scheduling/staff/group_form.html', {'form': form, 'title': 'Create Group'})
+
+@login_required
+def staff_group_update(request, pk):
+    if request.user.role != 'staff': return redirect('home')
+    group = get_object_or_404(Group, pk=pk)
+    if request.method == 'POST':
+        form = GroupForm(request.POST, instance=group)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Group updated")
+            return redirect('staff_group_list')
+    else:
+        form = GroupForm(instance=group)
+    return render(request, 'scheduling/staff/group_form.html', {'form': form, 'title': 'Update Group'})
+
+@login_required
+def staff_schedule_list(request):
+    if request.user.role != 'staff': return redirect('home')
+    schedules = Schedule.objects.all().order_by('-start_time')
+    
+    query = request.GET.get('q')
+    status = request.GET.get('status')
+    
+    if query:
+        schedules = schedules.filter(group__name__icontains=query)
+    if status:
+        schedules = schedules.filter(status=status)
+        
+    return render(request, 'scheduling/staff/schedule_list.html', {'schedules': schedules})
+
+@login_required
+def staff_schedule_update(request, pk):
+    if request.user.role != 'staff': return redirect('home')
+    schedule = get_object_or_404(Schedule, pk=pk)
+    if request.method == 'POST':
+        schedule.room = request.POST.get('room')
+        schedule.status = request.POST.get('status')
+        schedule.save()
+        messages.success(request, "Schedule updated")
+        return redirect('staff_schedule_list')
+    return render(request, 'scheduling/staff/schedule_form.html', {'schedule': schedule, 'title': 'Update Schedule'})
+@login_required
+def staff_booking_list(request):
+    if request.user.role != 'staff': return redirect('home')
+    bookings = Booking.objects.all().order_by('-start_time')
+    
+    query = request.GET.get('q')
+    status = request.GET.get('status')
+    
+    if query:
+        bookings = bookings.filter(
+            Q(trainer__user__first_name__icontains=query) |
+            Q(member__user__first_name__icontains=query)
+        )
+    if status:
+        bookings = bookings.filter(status=status)
+        
+    return render(request, 'scheduling/staff/booking_list.html', {'bookings': bookings})
+
+@login_required
+def staff_booking_create(request):
+    if request.user.role != 'staff': return redirect('home')
+    if request.method == 'POST':
+        form = StaffBookingForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Booking created")
+            return redirect('staff_booking_list')
+    else:
+        form = StaffBookingForm()
+    return render(request, 'scheduling/staff/booking_form.html', {'form': form, 'title': 'Create Booking'})
+
+@login_required
+def staff_booking_update(request, pk):
+    if request.user.role != 'staff': return redirect('home')
+    booking = get_object_or_404(Booking, pk=pk)
+    if request.method == 'POST':
+        form = StaffBookingForm(request.POST, instance=booking)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Booking updated")
+            return redirect('staff_booking_list')
+    else:
+        form = StaffBookingForm(instance=booking)
+    return render(request, 'scheduling/staff/booking_form.html', {'form': form, 'title': 'Update Booking'})
+@login_required
+def staff_grouprecord_list(request):
+    if request.user.role != 'staff': return redirect('home')
+    records = GroupRecord.objects.all()
+    
+    status = request.GET.get('status')
+    if status:
+        records = records.filter(status=status)
+        
+    return render(request, 'scheduling/staff/grouprecord_list.html', {'records': records})
+
+@login_required
+def staff_grouprecord_create(request):
+    if request.user.role != 'staff': return redirect('home')
+    if request.method == 'POST':
+        form = GroupRecordForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Record created")
+            return redirect('staff_grouprecord_list')
+    else:
+        form = GroupRecordForm()
+    return render(request, 'scheduling/staff/grouprecord_form.html', {'form': form, 'title': 'Create Record'})
+
+@login_required
+def staff_grouprecord_update(request, pk):
+    if request.user.role != 'staff': return redirect('home')
+    record = get_object_or_404(GroupRecord, pk=pk)
+    if request.method == 'POST':
+        form = GroupRecordForm(request.POST, instance=record)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Record updated")
+            return redirect('staff_grouprecord_list')
+    else:
+        form = GroupRecordForm(instance=record)
+    return render(request, 'scheduling/staff/grouprecord_form.html', {'form': form, 'title': 'Update Record'})

@@ -13,6 +13,8 @@
                     <a href="{% url 'member_dashboard' %}" class="btn btn-warning btn-lg">Go to Dashboard</a>
                 {% elif user.role == 'trainer' %}
                     <a href="{% url 'trainer_dashboard' %}" class="btn btn-info btn-lg">Trainer Panel</a>
+                {% elif user.role == 'staff' %}
+                    <a href="{% url 'staff_dashboard' %}" class="btn btn-danger btn-lg">Staff Panel</a>
                 {% endif %}
             {% else %}
                 <p class="lead">Join our community today to start booking your fitness journey!</p>

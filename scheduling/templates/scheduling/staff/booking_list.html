@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Manage Bookings</h1>
+        <a href="{% url 'staff_booking_create' %}" class="btn btn-primary">Add New Booking</a>
+    </div>
+
+    <div class="mb-3">
+        <form method="get" class="d-flex gap-2">
+            <input type="text" name="q" class="form-control" placeholder="Search by trainer or member name..."
+                value="{{ request.GET.q }}">
+            <select name="status" class="form-select" style="max-width: 200px;">
+                <option value="">All Statuses</option>
+                <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
+                <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactive</option>
+            </select>
+            <button type="submit" class="btn btn-secondary">Filter</button>
+            {% if request.GET.q or request.GET.status %}
+            <a href="{% url 'staff_booking_list' %}" class="btn btn-outline-secondary">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div style="max-height: 600px; overflow-y: auto;">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light sticky-top">
+                        <tr>
+                            <th>Member</th>
+                            <th>Trainer</th>
+                            <th>Time</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in bookings %}
+                        <tr>
+                            <td>{{ booking.member.user.first_name }}</td>
+                            <td>{{ booking.trainer.user.first_name }}</td>
+                            <td>{{ booking.start_time|date:"D, d M H:i" }}</td>
+                            <td>
+                                <span
+                                    class="badge {% if booking.status == 'active' %}bg-success{% elif booking.status == 'pending' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                    {{ booking.status|title }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'staff_booking_update' booking.pk %}"
+                                    class="btn btn-sm btn-outline-primary">Edit</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">No bookings found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="mt-3">
+        <a href="{% url 'staff_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+</div>
+{% endblock %}

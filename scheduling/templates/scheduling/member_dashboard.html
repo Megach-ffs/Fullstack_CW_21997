@@ -1,113 +1,112 @@
 {% extends 'base.html' %}
-{% load static %}
 
 {% block content %}
-<div class="container py-4">
-    <h2 class="mb-4 text-warning">⭐ Member Dashboard</h2>
-    <p class="lead">Welcome, <strong>{{ user.first_name|default:user.username }}</strong>! Here you can view your scheduled classes and manage private bookings.</p>
-    
+<div class="container mt-4">
+    <h1 class="mb-4">Member Dashboard</h1>
+
     <div class="row">
-        <!-- LEFT COLUMN: Upcoming Group Classes (Now a schedule of sessions) -->
+        <!-- My Classes -->
         <div class="col-md-6 mb-4">
-            <div class="card border-warning h-100">
-                <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">My Upcoming Class Sessions (Total: {{ my_classes|length }})</h5>
-                    <a href="{% url 'classes' %}" class="btn btn-sm btn-dark">Browse New Classes</a>
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">My Classes</h3>
                 </div>
-                <div class="card-body p-0">
+                <div class="card-body">
                     {% if my_classes %}
-                        <div class="list-group list-group-flush">
-                            {# my_classes now contains Schedule objects directly, as fetched in views.py #}
-                            {% for schedule in my_classes %}
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="mb-1 text-primary">{{ schedule.group.name }}</h6>
-                                        <p class="mb-1 small">
-                                            <span class="badge bg-secondary me-2">{{ schedule.start_time|date:"l, M d" }}</span>
-                                            <span class="badge bg-dark me-2">{{ schedule.start_time|time:"g:i A" }} - {{ schedule.end_time|time:"g:i A" }}</span>
-                                            <span class="badge bg-info text-dark">Room: {{ schedule.room }}</span>
-                                        </p>
-                                        <small class="text-muted">Trainer: {{ schedule.trainer.user.first_name }} {{ schedule.trainer.user.last_name }}</small>
-                                    </div>
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        <div class="list-group">
+                            {% for class in my_classes %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">{{ class.group.name }}</h5>
+                                    <small>{{ class.start_time|date:"D, d M H:i" }}</small>
                                 </div>
+                                <p class="mb-1">Room: {{ class.room }}</p>
+                                <small>Trainer: {{ class.trainer.user.first_name }}</small>
+                            </div>
                             {% endfor %}
                         </div>
+                    </div>
                     {% else %}
-                        <div class="p-3 text-center">
-                            <p class="mb-0 text-muted">You are not currently enrolled in any active group classes. <a href="{% url 'classes' %}">Sign up here</a>.</p>
-                        </div>
+                    <p class="text-muted">You are not enrolled in any classes.</p>
+                    <a href="{% url 'classes' %}" class="btn btn-outline-primary btn-sm">Browse Classes</a>
                     {% endif %}
                 </div>
             </div>
         </div>
-        
-        <!-- RIGHT COLUMN: Private Bookings and New Booking Form -->
+
+        <!-- My Bookings -->
         <div class="col-md-6 mb-4">
-            <div class="card border-info mb-4">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">My Private Bookings</h5>
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-success text-white">
+                    <h3 class="card-title mb-0">My Bookings</h3>
                 </div>
-                <div class="card-body p-0">
+                <div class="card-body">
                     {% if my_bookings %}
-                        <div class="list-group list-group-flush">
-                            {% for booking in my_bookings %}
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="mb-1">Private Session with {{ booking.trainer.user.first_name }}</h6>
-                                        <small class="text-muted">{{ booking.start_time|date:"l, M d, g:i A" }}</small>
-                                    </div>
-                                    <span class="badge 
-                                        {% if booking.status == 'active' %}bg-success
-                                        {% elif booking.status == 'pending' %}bg-warning text-dark
-                                        {% else %}bg-danger
-                                        {% endif %}">
-                                        {{ booking.get_status_display }}
-                                    </span>
-                                </div>
-                            {% endfor %}
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Trainer</th>
+                                        <th>Time</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for booking in my_bookings %}
+                                    <tr>
+                                        <td>{{ booking.trainer.user.first_name }}</td>
+                                        <td>{{ booking.start_time|date:"D, d M H:i" }}</td>
+                                        <td>
+                                            <span
+                                                class="badge {% if booking.status == 'active' %}bg-success{% elif booking.status == 'pending' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                                {{ booking.status|title }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
+                    </div>
                     {% else %}
-                        <p class="p-3 text-muted mb-0 text-center">No private bookings found.</p>
+                    <p class="text-muted">No personal training bookings.</p>
                     {% endif %}
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- Booking Form -->
-            <div class="card border-primary">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">Book a Private Trainer</h5>
+    <!-- Book a Trainer -->
+    <div class="row justify-content-center mt-4">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white">
+                    <h3 class="card-title mb-0">Book a Trainer</h3>
                 </div>
                 <div class="card-body">
                     <form method="post">
                         {% csrf_token %}
-                        {% if booking_form.non_field_errors %}
-                            <div class="alert alert-danger">{{ booking_form.non_field_errors }}</div>
-                        {% endif %}
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Select Trainer</label>
-                            {{ booking_form.trainer }} 
-                        </div>
-                        
                         <div class="row">
-                            <div class="col-6 mb-3">
-                                <label class="form-label">Date</label>
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ booking_form.trainer.id_for_label }}" class="form-label">Trainer</label>
+                                {{ booking_form.trainer }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ booking_form.date.id_for_label }}" class="form-label">Date</label>
                                 {{ booking_form.date }}
                             </div>
-                            <div class="col-6 mb-3">
-                                <label class="form-label">Time</label>
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ booking_form.time.id_for_label }}" class="form-label">Time</label>
                                 {{ booking_form.time }}
                             </div>
                         </div>
-                        
-                        <button type="submit" class="btn btn-info text-white w-100">Request Booking</button>
+                        <button type="submit" class="btn btn-success w-100">Request Booking</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock content %}
-
-
-
+{% endblock %}
