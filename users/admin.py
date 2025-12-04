@@ -18,12 +18,11 @@ class CustomAdmin(UserAdmin):
         )
 
     add_fieldsets = (
-        (None, {'fields': ('username', 'password1', 'password2')}), # Basic login fields
+        (None, {'fields': ('username', 'password1', 'password2')}),
         ('Personal info', {'fields': ('first_name', 'last_name', 'email')}),
         ('Permissions', {
             'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
         }),
-        # Your custom fieldset
         ('Role', {'fields':('role','phone')}), 
     )
 

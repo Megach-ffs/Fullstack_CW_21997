@@ -65,13 +65,10 @@
                         {% for booking in pending %}
                         <div class="card mb-3 border-warning">
                             <div class="card-body">
-                                <h5 class="card-title">{{ booking.member.user.first_name }} {{
-                                    booking.member.user.last_name
-                                    }}</h5>
+                                <h5 class="card-title">{{ booking.member.user.first_name }} {{booking.member.user.last_name}}</h5>
                                 <p class="card-text">
                                     <strong>Date:</strong> {{ booking.start_time|date:"D, d M Y" }}<br>
-                                    <strong>Time:</strong> {{ booking.start_time|date:"H:i" }} - {{
-                                    booking.end_time|date:"H:i" }}
+                                    <strong>Time:</strong> {{ booking.start_time|date:"H:i" }} - {{booking.end_time|date:"H:i" }}
                                 </p>
                                 <form method="post" class="d-flex gap-2">
                                     {% csrf_token %}
