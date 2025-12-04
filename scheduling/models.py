@@ -64,7 +64,7 @@ class GroupRecord(models.Model):
     status = models.CharField(max_length=20, choices=STATUS, default='inactive')
 
     def __str__(self):
-        return f"{self.member.user.first_name} - {self.schedule.group.name} - {self.status}"
+        return f"{self.member.user.first_name} - {self.group.name} - {self.status}"
 
 
 

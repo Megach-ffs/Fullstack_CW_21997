@@ -1,5 +1,13 @@
 from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from .views import *
+from .views_api import *
+
+router = DefaultRouter()
+router.register(r'groups', GroupViewSet)
+router.register(r'schedules', ScheduleViewSet)
+router.register(r'bookings', BookingViewSet)
+router.register(r'group-records', GroupRecordViewSet)
 
 urlpatterns = [
      path('', home, name='home'),
@@ -33,4 +41,5 @@ urlpatterns = [
      path('staff/records/create/', staff_grouprecord_create, name='staff_grouprecord_create'),
      path('staff/records/update/<int:pk>/', staff_grouprecord_update, name='staff_grouprecord_update'),
 
-    ]
+     path('api/', include(router.urls)),
+]
